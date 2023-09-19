@@ -9,6 +9,7 @@
   "author": "Anna Starling",
   "license": "ISC",
   "devDependencies": {
-    "cypress": "^13.2.0"
+    "cypress": "^13.2.0",
+    "typescript": "^5.2.2"
   }
 }
