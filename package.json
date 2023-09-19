@@ -11,5 +11,9 @@
   "devDependencies": {
     "cypress": "^13.2.0",
     "typescript": "^5.2.2"
+  },
+  "dependencies": {
+    "cypress-sql-server": "^1.0.0",
+    "dayjs": "^1.11.10"
   }
 }
