@@ -6,6 +6,7 @@ import { Wholesalers } from "../support/enums";
 import { OrderPage } from "../page-objects/order-page";
 
 export function getItemForTest(wholesaler) {
+  
   cy.wait("@pageLoaded").then(({ response }) => {
     expect(response.statusCode).to.equal(200);
 
@@ -47,9 +48,11 @@ export function getItemForTest(wholesaler) {
   });
 }
 
-export function addItemAndCheckCartTab(wholesaler) {
+
+export function searchItemOnPage() {
   cy.get("@item").then((item: any) => {
     if (item.ipuCode != null) {
+      
       SearchBar.searchByText(item.ipuCode);
       cy.wait("@search").then(({ response }) => {
         expect(response.statusCode).to.equal(200);
@@ -61,18 +64,7 @@ export function addItemAndCheckCartTab(wholesaler) {
       });
     }
 
-    toAddItemToTheShoppingCart();
-    ShoppingCart.openCart();
-
-    ShoppingCart.checkCartCard(
-      wholesaler,
-      "",
-      item.description,
-      item.packSize,
-      item.packType,
-      item.netprice.toFixed(2),
-      item.discount
-    );
+    
   });
 }
 
@@ -86,6 +78,50 @@ export function toAddItemToTheShoppingCart() {
     expect(response.statusCode).to.equal(200);
   });
 }
+
+
+
+export function checkCartTab(wholesaler:string) {
+  
+  cy.get("@item").then((item: any) => {
+    
+    ShoppingCart.openCart();
+
+    ShoppingCart.checkCartCard(
+      wholesaler,
+      "",
+      item.description,
+      item.packSize,
+      item.packType,
+      item.netprice.toFixed(2),
+      item.discount
+    );
+    
+  });
+  
+  
+}
+
+// export function addItemAndCheckCartTab(wholesaler) {
+//   cy.get("@item").then((item: any) => {
+//     if (item.ipuCode != null) {
+//       SearchBar.searchByText(item.ipuCode);
+//       cy.wait("@search").then(({ response }) => {
+//         expect(response.statusCode).to.equal(200);
+//       });
+//     } else {
+//       SearchBar.searchByText(item.description);
+//       cy.wait("@textSearchLoaded").then(({ response }) => {
+//         expect(response.statusCode).to.equal(200);
+//       });
+//     }
+
+//     toAddItemToTheShoppingCart();
+    
+//   });
+// }
+
+
 
 export function toCheckOrderHistory(wholesaler) {
   cy.wait("@orderHistory").then(({ response }) => {
@@ -158,18 +194,9 @@ export function toCheckOrderDetails(pharmacyId) {
   });
 }
 
-export function toPlaceTheOrder(wholesalerName: string) {
-  function toUpdateQtyToPlaceTheOrder(orderMinValue: number) {
-    ShoppingCart.elements.cartCardOrderBtn().should("be.disabled");
-    cy.get("@item").then((item: any) => {
-      let qty = Math.round(orderMinValue / item.netprice.toFixed(2));
-      localStorage.setItem("newQty", `${qty + 1}`);
-      for (let index = 0; index < qty; index++) {
-        ShoppingCart.raiseQtyValue();
-      }
-    });
-    ShoppingCart.elements.cartCardOrderBtn().should("not.be.disabled");
-  }
+export function setQty(wholesalerName: string) {
+  
+  
 
   switch (wholesalerName) {
     case "United Drug":
@@ -196,18 +223,37 @@ export function toPlaceTheOrder(wholesalerName: string) {
       break;
   }
 
+  function toUpdateQtyToPlaceTheOrder(orderMinValue: number) {
+    
+    ShoppingCart.elements.cartCardOrderBtn().should("be.disabled");
+    cy.get("@item").then((item: any) => {
+      let qty = Math.round(orderMinValue / item.netprice.toFixed(2));
+      localStorage.setItem("newQty", `${qty + 1}`);
+      for (let index = 0; index < qty; index++) {
+        ShoppingCart.raiseQtyValue();
+      }
+    });
+    ShoppingCart.elements.cartCardOrderBtn().should("not.be.disabled");
+  }
+
+  
+}
+
+
+
+export function placeOrder(wholesalerName:string) {
   ShoppingCart.pressOrderButton();
 
-  if (wholesalerName == "ELEMENTS" || Wholesalers.CLINIGEN.Name) {
-    cy.get(
-      "#app-root > app > ultima-layout > div > div > pharmax-header > div > global-cart > p-dialog.ng-tns-c49-17.ng-star-inserted > div > div"
-    ).should("be.visible");
+  // if (wholesalerName == "ELEMENTS" || Wholesalers.CLINIGEN.Name) {
+  //   cy.get(
+  //     "#app-root > app > ultima-layout > div > div > pharmax-header > div > global-cart > p-dialog.ng-tns-c49-17.ng-star-inserted > div > div"
+  //   ).should("be.visible");
 
-    cy.get(".p-d-flex > .p-button-success").click();
-    cy.wait(500);
-  } else {
-    cy.log("Skip");
-  }
+  //   cy.get(".p-d-flex > .p-button-success").click();
+  //   cy.wait(500);
+  // } else {
+  //   cy.log("Skip");
+  // }
 
   ShoppingCart.successfulOrderToastMessage(wholesalerName);
 

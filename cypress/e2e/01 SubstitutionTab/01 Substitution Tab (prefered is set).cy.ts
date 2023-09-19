@@ -9,7 +9,7 @@ import {
   localDepot,
   cutoffDepot,
 } from "../../support/enums";
-import { sql } from "../../service/sqlScriptsService";
+import { sql } from "../../service/sqlService";
 
 describe("Substitution Tab states for UD items where preferred is set", () => {
   /*
@@ -29,8 +29,7 @@ describe("Substitution Tab states for UD items where preferred is set", () => {
     */
   const pharmacyId = Cypress.env("pharmacyId");
   const preferredId = 27405;
-  const preferredDescription =
-    "ATORVASTATIN FC  TABS 40MG (ACTAVIS) ATORVASTATIN";
+  const preferredDescription ="ATORVASTATIN FC  TABS 40MG (ACTAVIS) ATORVASTATIN";
   const nextBestId = 27694;
   const nextBestDescription = "ATORVASTATIN TABS 10MG (PFIZER) ATORVASTATIN";
   const ipuCode = 5099627279192;

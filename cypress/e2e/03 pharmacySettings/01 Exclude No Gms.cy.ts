@@ -1,5 +1,5 @@
-import { checkResponseNoPendingOrEmptyGmsCode } from "../../../services/pharmacySettingsService";
-import { sql } from "../../../services/sqlScriptsService";
+import { checkResponseNoPendingOrEmptyGmsCode } from "../../service/pharmacyService";
+import { sql } from "../../service/sqlService";
 const pharmacyId = Cypress.env("pharmacyId");
 
 /*

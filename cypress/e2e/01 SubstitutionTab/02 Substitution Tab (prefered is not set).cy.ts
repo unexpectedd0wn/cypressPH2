@@ -1,6 +1,6 @@
 const dayjs = require("dayjs");
-import { APIRequests } from "../../../page-objects/api-routes";
-import { SubstitutionTab } from "../../../page-objects/substitution-tab";
+import { APIRequests } from "../../page-objects/api-routes";
+import { SubstitutionTab } from "../../page-objects/substitution-tab";
 import {
   expectedDelivery,
   depot,
@@ -8,8 +8,8 @@ import {
   useCutOff,
   localDepot,
   cutoffDepot,
-} from "../../../support/enums";
-import { sql } from "../../../services/sqlScriptsService";
+} from "../../support/enums";
+import { sql } from "../../service/sqlService";
 
 describe("Substitution Tab state checks when no Preferred set in the Brokered group", () => {
   /*
