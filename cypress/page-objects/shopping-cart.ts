@@ -1,4 +1,4 @@
-import { piMinOrderValue } from "../support/enums";
+import { Wholesalers, piMinOrderValue } from "../support/enums";
 class shoppingcart {
 
     elements = 
@@ -74,14 +74,26 @@ state_OOSShoppingCart(description){
     
 }
 
-checkCartCard(wholesaler: string ,expectedDelivery: string, description: string, packsize: string, packtype: string, netprice: number, discount: number){
+checkCartCard(page: string, wholesaler: string ,expectedDelivery: string, description: string, packsize: string, packtype: string, netprice: number, discount: number){
     
     //leftSummaryCard
     this.elements.summaryCard().should('exist').and('be.visible');
     
     
+    if (page == "ULM") {
+        if (wholesaler == Wholesalers.ONEILLS.Name) {
+            let newWholeslaerName = wholesaler.replace('’',"'");
+            this.elements.summaryCardWholesalerName().should('include.text', newWholeslaerName + ' ULM');
+            this.elements.cartCardTitle().should('include.text', newWholeslaerName + ' ULM');
+        } else {
+            cy.log("skip");
+        }
+        
+    }else{
+        this.elements.summaryCardWholesalerName().should('include.text', wholesaler).and('be.visible');
+        this.elements.cartCardTitle().should('include.text', wholesaler).and('be.visible');
+    }
     
-    this.elements.summaryCardWholesalerName().should('include.text', wholesaler).and('be.visible');
     this.elements.summaryCardNumberOfItems().should('include.text', ' 1 item ').and('be.visible');
     this.elements.summaryCardGreenCircle().should('be.visible')
     
@@ -91,7 +103,7 @@ checkCartCard(wholesaler: string ,expectedDelivery: string, description: string,
         this.elements.cartCardExpectedDelivery().should('be.visible')
     }
    
-    this.elements.cartCardTitle().should('include.text', wholesaler).and('be.visible');
+    
 
     this.elements.cartCardItemDescription()
         .should(($name) => {

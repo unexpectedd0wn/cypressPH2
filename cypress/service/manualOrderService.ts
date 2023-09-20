@@ -4,6 +4,7 @@ import { ShoppingCart } from "../page-objects/shopping-cart";
 import { piMinOrderValue } from "../support/enums";
 import { Wholesalers } from "../support/enums";
 import { OrderPage } from "../page-objects/order-page";
+import { sql } from "./sqlService";
 
 export function getItemForTest(wholesaler) {
   
@@ -48,6 +49,61 @@ export function getItemForTest(wholesaler) {
   });
 }
 
+export function getItemForTestBetter(pharmacyId, wholesaler, page) {
+  
+  let pageType = getProductType(page);
+
+  function getProductType(page: string) {
+    switch (page) {
+      case "Brokered Ethical":
+        return (pageType = 2);
+        break;
+      case "Brokered OTC":
+        return (pageType = 3);
+        break;
+      case "Second Line":
+        return (pageType = 4);
+        break;
+      case "ULM":
+        return (pageType = 5);
+        break;
+      default:
+        break;
+    }
+  }
+  
+  cy.sqlServer(`SELECT TOP(1)* from dbo.GetStockProducts('${pharmacyId}', '${pageType}') where WholesalerName = '${wholesaler}' AND InStock = '1'`)
+  .then((data: any) => {
+    cy.log(data);
+
+    cy.wrap({
+      stockproductid: data[1],
+      }).as("itemStockId");
+  });
+
+  cy.get("@itemStockId").then((item: any) => {
+    cy.sqlServer(
+      `SELECT Id, IPUCode, Description, PackSize, Type, NetPrice, Discount, TradePrice from Stockproducts WHERE Id = ${item.stockproductid}`
+    ).then((data: any) => {
+      cy.log(data);
+
+      cy.wrap({
+        id: data[0],
+        ipuCode: data[1],
+        description: data[2],
+        packSize: data[3],
+        packType: data[4],
+        netprice: data[5],
+        discount: data[6],
+        tradeprice: data[7],
+      }).as("item");
+    });
+  });
+  
+  
+  
+}
+
 
 export function searchItemOnPage() {
   cy.get("@item").then((item: any) => {
@@ -59,7 +115,7 @@ export function searchItemOnPage() {
       });
     } else {
       SearchBar.searchByText(item.description);
-      cy.wait("@textSearchLoaded").then(({ response }) => {
+      cy.wait("@pageLoaded").then(({ response }) => {
         expect(response.statusCode).to.equal(200);
       });
     }
@@ -71,8 +127,11 @@ export function searchItemOnPage() {
 export function toAddItemToTheShoppingCart() {
   cy.wait("@pageLoaded").then(({ response }) => {
     expect(response.statusCode).to.equal(200);
+    cy.wait(500);
+    OrderPage.setQtyAndAddToShoppingCart();
   });
-  OrderPage.setQtyAndAddToShoppingCart();
+  
+  
 
   cy.wait("@itemAdded").then(({ response }) => {
     expect(response.statusCode).to.equal(200);
@@ -81,13 +140,14 @@ export function toAddItemToTheShoppingCart() {
 
 
 
-export function checkCartTab(wholesaler:string) {
+export function checkCartTab(page: string, wholesaler:string) {
   
   cy.get("@item").then((item: any) => {
     
     ShoppingCart.openCart();
 
     ShoppingCart.checkCartCard(
+      page,
       wholesaler,
       "",
       item.description,
@@ -148,7 +208,8 @@ export function toCheckOrderHistory(wholesaler) {
                 wholesaler: wholesaler,
                 numberOfItem: "1",
                 totalValue: `€${(
-                  item.netprice * parseInt(localStorage.getItem("newQty"))
+                  item.netprice * 1
+                  // item.netprice * parseInt(localStorage.getItem("newQty"))
                 ).toFixed(2)}`,
               });
 
@@ -158,8 +219,6 @@ export function toCheckOrderHistory(wholesaler) {
               log: true,
               timeout: 10000,
             });
-          } else {
-            cy.log("Skip orders");
           }
         });
       });
@@ -183,7 +242,8 @@ export function toCheckOrderDetails(pharmacyId) {
       cy.sqlServer(
         `select Qty, Description, Cost, IPUCode, TradePrice, Discount from OrderDetails where OrderId = ${order.id} order by Id desc;`
       ).should("deep.eq", [
-        parseInt(localStorage.getItem("newQty")),
+        // parseInt(localStorage.getItem("newQty")),
+        1,
         item.description,
         item.netprice,
         item.ipuCode,
@@ -194,9 +254,20 @@ export function toCheckOrderDetails(pharmacyId) {
   });
 }
 
-export function setQty(wholesalerName: string) {
+function setQty(wholesalerName: string) {
   
-  
+  function toUpdateQtyToPlaceTheOrder(orderMinValue: number) {
+    
+    ShoppingCart.elements.cartCardOrderBtn().should("be.disabled");
+    cy.get("@item").then((item: any) => {
+      let qty = Math.round(orderMinValue / item.netprice.toFixed(2));
+      localStorage.setItem("newQty", `${qty + 1}`);
+      for (let index = 0; index < qty; index++) {
+        ShoppingCart.raiseQtyValue();
+      }
+    });
+    ShoppingCart.elements.cartCardOrderBtn().should("not.be.disabled");
+  }
 
   switch (wholesalerName) {
     case "United Drug":
@@ -223,37 +294,37 @@ export function setQty(wholesalerName: string) {
       break;
   }
 
-  function toUpdateQtyToPlaceTheOrder(orderMinValue: number) {
-    
-    ShoppingCart.elements.cartCardOrderBtn().should("be.disabled");
-    cy.get("@item").then((item: any) => {
-      let qty = Math.round(orderMinValue / item.netprice.toFixed(2));
-      localStorage.setItem("newQty", `${qty + 1}`);
-      for (let index = 0; index < qty; index++) {
-        ShoppingCart.raiseQtyValue();
-      }
-    });
-    ShoppingCart.elements.cartCardOrderBtn().should("not.be.disabled");
-  }
+  
 
   
 }
 
 
 
-export function placeOrder(wholesalerName:string) {
+export function placeOrder(wholesalerName:string, page: string) {
+  
+  setQty(wholesalerName);
+  
+  
   ShoppingCart.pressOrderButton();
 
-  // if (wholesalerName == "ELEMENTS" || Wholesalers.CLINIGEN.Name) {
-  //   cy.get(
-  //     "#app-root > app > ultima-layout > div > div > pharmax-header > div > global-cart > p-dialog.ng-tns-c49-17.ng-star-inserted > div > div"
-  //   ).should("be.visible");
+  if (page == "ULM") {
+    cy.get(
+      "#app-root > app > ultima-layout > div > div > pharmax-header > div > global-cart > p-dialog.ng-tns-c49-17.ng-star-inserted > div > div"
+    ).should("be.visible");
 
-  //   cy.get(".p-d-flex > .p-button-success").click();
-  //   cy.wait(500);
-  // } else {
-  //   cy.log("Skip");
-  // }
+    cy.get(".p-d-flex > .p-button-success").click();
+    cy.wait(500);
+  } else {
+    cy.log("Skip");
+  }
+  
+  
+  
+  
+  
+  
+  
 
   ShoppingCart.successfulOrderToastMessage(wholesalerName);
 

@@ -9,6 +9,8 @@ export class SqlScripts {
       );
       cy.sqlServer(`DELETE FROM BrokeredItems WHERE PharmacyId = ${pharmacyId}`);
     }
+
+    
   
     /**
      * sql query to add item to the Pharmacy Substitution Tab
@@ -119,6 +121,15 @@ export class SqlScripts {
      */
     getIPUCode(Id) {
       cy.sqlServer(`SELECT IPUCode from Stockproducts WHERE Id = ${Id}`);
+    }
+
+    /**
+     * sql query to get items for test
+     * ProductType enums: newProducts = 1, brokeredEthical = 2, brokeredOtc = 3, secondLine = 4, ulm = 5
+     * @example sql.getItemForTest(411, 'United Drug', 2)
+     */
+    getItemForTest(pharmacyId, wholesaler, producttype) {
+      cy.sqlServer(`SELECT * from dbo.GetStockProducts(${pharmacyId}, ${producttype}) where WholesalerName = ${wholesaler}`);
     }
   }
   
