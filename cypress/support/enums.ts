@@ -67,7 +67,7 @@ export const Wholesalers ={
     UD: {
         Id: 1,
         Name: "United Drug",
-        secondName: "Elements"
+        secondName: "ELEMENTS"
     },
     PCO: {
         Id: 2,
@@ -78,7 +78,8 @@ export const Wholesalers ={
         Name: "IMED"
     },
     ONEILLS:{
-        Name: `O’Neills`
+        Name: `O’Neills`,
+        ulmName: 'O’Neills ULM'
     }, 
     LEXON: {
         Id: 6,
@@ -104,7 +105,8 @@ export const piMinOrderValue = {
     IMED: 100,
     ONeils: 100,
     Lexon: 75,
-    QM: 20
+    QM: 20,
+    ONailsULM: 10
 }
 
 export const headings = {

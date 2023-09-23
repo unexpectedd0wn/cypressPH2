@@ -6,48 +6,7 @@ import { Wholesalers } from "../support/enums";
 import { OrderPage } from "../page-objects/order-page";
 import { sql } from "./sqlService";
 
-export function getItemForTest(wholesaler) {
-  
-  cy.wait("@pageLoaded").then(({ response }) => {
-    expect(response.statusCode).to.equal(200);
 
-    cy.selectWholesaler(wholesaler);
-
-    cy.wait("@searchWholesaler").then(({ response }) => {
-      expect(response.statusCode).to.equal(200);
-
-      var numberOfItems = response.body.items.length - 1;
-
-      do {
-        var i = getRandomNumber(numberOfItems);
-        cy.wrap({
-          id: response.body.items[i].id,
-        }).as("itemId");
-
-        cy.log("Found perfect item");
-      } while (response.body.items[i].caseSize > 1);
-    });
-  });
-
-  cy.get("@itemId").then((item: any) => {
-    cy.sqlServer(
-      `SELECT Id, IPUCode, Description, PackSize, Type, NetPrice, Discount, TradePrice from Stockproducts WHERE Id = ${item.id}`
-    ).then((data: any) => {
-      cy.log(data);
-
-      cy.wrap({
-        id: data[0],
-        ipuCode: data[1],
-        description: data[2],
-        packSize: data[3],
-        packType: data[4],
-        netprice: data[5],
-        discount: data[6],
-        tradeprice: data[7],
-      }).as("item");
-    });
-  });
-}
 
 export function getItemForTestBetter(pharmacyId, wholesaler, page) {
   
@@ -99,44 +58,8 @@ export function getItemForTestBetter(pharmacyId, wholesaler, page) {
       }).as("item");
     });
   });
-  
-  
-  
 }
 
-
-export function searchItemOnPage() {
-  cy.get("@item").then((item: any) => {
-    if (item.ipuCode != null) {
-      
-      SearchBar.searchByText(item.ipuCode);
-      cy.wait("@search").then(({ response }) => {
-        expect(response.statusCode).to.equal(200);
-      });
-    } else {
-      SearchBar.searchByText(item.description);
-      cy.wait("@pageLoaded").then(({ response }) => {
-        expect(response.statusCode).to.equal(200);
-      });
-    }
-
-    
-  });
-}
-
-export function toAddItemToTheShoppingCart() {
-  cy.wait("@pageLoaded").then(({ response }) => {
-    expect(response.statusCode).to.equal(200);
-    cy.wait(500);
-    OrderPage.setQtyAndAddToShoppingCart();
-  });
-  
-  
-
-  cy.wait("@itemAdded").then(({ response }) => {
-    expect(response.statusCode).to.equal(200);
-  });
-}
 
 
 
@@ -208,8 +131,8 @@ export function toCheckOrderHistory(wholesaler) {
                 wholesaler: wholesaler,
                 numberOfItem: "1",
                 totalValue: `€${(
-                  item.netprice * 1
-                  // item.netprice * parseInt(localStorage.getItem("newQty"))
+                  // item.netprice * 1
+                  item.netprice * parseInt(localStorage.getItem("newQty"))
                 ).toFixed(2)}`,
               });
 
@@ -242,8 +165,8 @@ export function toCheckOrderDetails(pharmacyId) {
       cy.sqlServer(
         `select Qty, Description, Cost, IPUCode, TradePrice, Discount from OrderDetails where OrderId = ${order.id} order by Id desc;`
       ).should("deep.eq", [
-        // parseInt(localStorage.getItem("newQty")),
-        1,
+        parseInt(
+        localStorage.getItem("newQty")),
         item.description,
         item.netprice,
         item.ipuCode,
@@ -273,6 +196,7 @@ function setQty(wholesalerName: string) {
     case "United Drug":
       ShoppingCart.elements.cartCardOrderBtn().should("not.be.disabled");
       localStorage.setItem("newQty", `1`);
+      cy.log("The Qty in the local storage!")
       break;
     case "ELEMENTS":
       ShoppingCart.elements.cartCardOrderBtn().should("not.be.disabled");
@@ -290,9 +214,14 @@ function setQty(wholesalerName: string) {
     case "O’Neills":
       toUpdateQtyToPlaceTheOrder(piMinOrderValue.ONeils);
       break;
+    case "O’Neills ULM":
+      toUpdateQtyToPlaceTheOrder(piMinOrderValue.ONailsULM);
+      break;
     default:
       break;
   }
+
+  
 
   
 
@@ -301,11 +230,22 @@ function setQty(wholesalerName: string) {
 
 
 
-export function placeOrder(wholesalerName:string, page: string) {
-  
-  setQty(wholesalerName);
-  
-  
+export function placeOrder(wholesalerName: string, page: string) {
+  cy.get(".cart-order-btn").then(($btn) => {
+    if ($btn.is(":disabled")) {
+      cy.log("Button exists and is disabled!");
+
+      if (page == "ULM" && wholesalerName == "O’Neills") {
+        setQty(Wholesalers.ONEILLS.ulmName);
+      } else {
+        setQty(wholesalerName);
+      }
+    } else {
+      cy.log("Button exists and is enabled!");
+      localStorage.setItem("newQty", `1`);
+    }
+  });
+
   ShoppingCart.pressOrderButton();
 
   if (page == "ULM") {
@@ -318,18 +258,95 @@ export function placeOrder(wholesalerName:string, page: string) {
   } else {
     cy.log("Skip");
   }
-  
-  
-  
-  
-  
-  
-  
 
-  ShoppingCart.successfulOrderToastMessage(wholesalerName);
+  if (page == "ULM" && wholesalerName == "United Drug") {
+    ShoppingCart.successfulOrderToastMessage(Wholesalers.UD.secondName);
+  } else if (page == "ULM" && wholesalerName == "O’Neills") {
+    ShoppingCart.successfulOrderToastMessage("O'Neills ULM");
+  } else {
+    ShoppingCart.successfulOrderToastMessage(wholesalerName);
+  }
 
   cy.wait("@shopingCart").then(({ response }) => {
     expect(response.statusCode).to.equal(200);
     ShoppingCart.emptyShoppingCartAppears();
+  });
+}
+
+
+export function getItemForTest(wholesaler) {
+  
+  cy.wait("@pageLoaded").then(({ response }) => {
+    expect(response.statusCode).to.equal(200);
+
+    cy.selectWholesaler(wholesaler);
+
+    cy.wait("@searchWholesaler").then(({ response }) => {
+      expect(response.statusCode).to.equal(200);
+
+      var numberOfItems = response.body.items.length - 1;
+
+      do {
+        var i = getRandomNumber(numberOfItems);
+        cy.wrap({
+          id: response.body.items[i].id,
+        }).as("itemId");
+
+        cy.log("Found perfect item");
+      } while (response.body.items[i].caseSize > 1);
+    });
+  });
+
+  cy.get("@itemId").then((item: any) => {
+    cy.sqlServer(
+      `SELECT Id, IPUCode, Description, PackSize, Type, NetPrice, Discount, TradePrice from Stockproducts WHERE Id = ${item.id}`
+    ).then((data: any) => {
+      cy.log(data);
+
+      cy.wrap({
+        id: data[0],
+        ipuCode: data[1],
+        description: data[2],
+        packSize: data[3],
+        packType: data[4],
+        netprice: data[5],
+        discount: data[6],
+        tradeprice: data[7],
+      }).as("item");
+    });
+  });
+}
+
+export function searchItemOnPage() {
+  cy.get("@item").then((item: any) => {
+    if (item.ipuCode != null) {
+      
+      SearchBar.searchByText(item.ipuCode);
+      cy.wait("@search").then(({ response }) => {
+        expect(response.statusCode).to.equal(200);
+      });
+    } else {
+      SearchBar.searchByText(item.description);
+      cy.wait("@pageLoaded").then(({ response }) => {
+        expect(response.statusCode).to.equal(200);
+      });
+    }
+
+    
+  });
+}
+
+
+export function toAddItemToTheShoppingCart() {
+  cy.wait("@pageLoaded").then(({ response }) => {
+    expect(response.statusCode).to.equal(200);
+    cy.wait(500);
+    OrderPage.setQtyAndAddToShoppingCart();
+  });
+  
+  
+
+  cy.wait("@itemAdded").then(({ response }) => {
+    expect(response.statusCode).to.equal(200);
   });
 }

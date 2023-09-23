@@ -12,6 +12,8 @@ Cypress.Commands.add("signInCreateSession", (email, password) => {
   cy.session([email, password], () => {
     cy.intercept("/api/account/login").as("requestLogIn");
     cy.visit(Cypress.env("devURL"));
+    // cy.contains('Accept all cookies').click({force:true})
+    // cy.get('[data-testid="uc-accept-all-button"]').click();
     LoginPage.typeEmail(email);
     LoginPage.typePassword(password);
     LoginPage.clickOnLogin();

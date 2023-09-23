@@ -10,7 +10,8 @@ export class Login{
 
     clickOnLogin()
     {
-        this.elements.loginBtn().click();
+        this.elements.loginBtn().click({force: true});
+        
     }
     typeEmail(password)
     {
