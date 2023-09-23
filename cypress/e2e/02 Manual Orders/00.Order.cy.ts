@@ -7,100 +7,82 @@ import {
   toCheckOrderDetails,
   toCheckOrderHistory,
   placeOrder,
-  getItemForTestBetter,
+  getItemForTest,
 } from "../../service/manualOrderService";
 
 const pharmacyId = Cypress.env("pharmacyId");
 let currentDateTime = dayjs()
-.subtract(2, "hour")
-.format("YYYY-MM-DD HH:mm:ss:SSS");
+  .subtract(2, "hour")
+  .format("YYYY-MM-DD HH:mm:ss:SSS");
 
 interface TestCase {
   page: string;
   wholesaler: string;
-  pharmacy: string;
 }
 
 const testCase: TestCase[] = [
   {
     page: "Brokered Ethical",
     wholesaler: Wholesalers.UD.Name,
-    pharmacy: pharmacyId
   },
   {
     page: "Brokered OTC",
     wholesaler: Wholesalers.UD.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "Second Line",
     wholesaler: Wholesalers.UD.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "Brokered Ethical",
     wholesaler: Wholesalers.PCO.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "Brokered OTC",
     wholesaler: Wholesalers.PCO.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "Brokered Ethical",
     wholesaler: Wholesalers.IMED.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "Brokered OTC",
     wholesaler: Wholesalers.IMED.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "Brokered Ethical",
     wholesaler: Wholesalers.LEXON.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "Brokered OTC",
     wholesaler: Wholesalers.LEXON.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "Brokered Ethical",
     wholesaler: Wholesalers.ONEILLS.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "Brokered OTC",
     wholesaler: Wholesalers.ONEILLS.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "ULM",
     wholesaler: Wholesalers.CLINIGEN.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "ULM",
     wholesaler: Wholesalers.UD.Name,
-    pharmacy: pharmacyId,
   },
   {
     page: "ULM",
     wholesaler: Wholesalers.ONEILLS.Name,
-    pharmacy: pharmacyId,
-  }
+  },
   // -------- At the top is ready cases-----------------
   // fridgecase
   // {
   //   page: "ULM",
   //   wholesaler: Wholesalers.ONEILLS.Name,
-  //   pharmacy: pharmacyId,
   // },
-  
-  
 ];
 
 describe("Manual Orders: United Drug", () => {
@@ -112,28 +94,27 @@ describe("Manual Orders: United Drug", () => {
     cy.on("uncaught:exception", (err, runnable) => {
       return false;
     });
-    
+
     cy.intercept(APIRequests.request._getShoppingCart + "*").as("shopingCart");
     cy.intercept(APIRequests.request._addItemShoppingCart).as("itemAdded");
-    cy.intercept(APIRequests.request._sendOrder).as("sendorder");
-    cy.intercept(APIRequests.request._getDataOrderHistoryPage).as("orderHistory");
-    
+    cy.intercept(APIRequests.request._sendOrder).as("sendOrder");
+    cy.intercept(APIRequests.request._getDataOrderHistoryPage).as(
+      "orderHistory"
+    );
+
     cy.fixture("main").then((data) => {
-      
       cy.signInCreateSession(data.pharmacyUserEmail, data.pharmacyUserPassword);
     });
   });
 
-
-  for (const { page, wholesaler, pharmacy } of testCase) {
+  for (const { page, wholesaler } of testCase) {
     it("Manual Order", () => {
-      
-      getItemForTestBetter(pharmacyId, wholesaler, page);
-      
+      getItemForTest(pharmacyId, wholesaler, page);
+
       cy.get("@item").then((item: any) => {
         sql.addItemToShoppingCart(
           item.ipuCode,
-          pharmacy,
+          pharmacyId,
           item.id,
           currentDateTime
         );
@@ -142,7 +123,7 @@ describe("Manual Orders: United Drug", () => {
       cy.visitPage(page);
       ShoppingCart.openCart();
       placeOrder(wholesaler, page);
-      toCheckOrderDetails(pharmacy);
+      toCheckOrderDetails(pharmacyId);
       cy.visitPage("Order History");
       toCheckOrderHistory(wholesaler);
     });
