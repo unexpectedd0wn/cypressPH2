@@ -1,55 +1,68 @@
-import { getRandomNumber } from "../../../../services/commonService";
+import { getRandomNumber, getItemForTest } from "../../../service/commonService";
 import { SearchBar } from "../../../../page-objects/search-bar";
 import { sql } from "../../../../services/sqlScriptsService";
 
 const pharmacyId = Cypress.env("pharmacyId");
 
-function getItemForTest() {
+
+
+interface TestCase {
+    searchQuerry: string;
+    }
+
+    const testCase: TestCase[] = [
+        {
+        searchQuerry: "Brokered Ethical"
+          
+        }
+      ];
+
+// function getItemForTest() {
     
     
-    cy.wait('@pageLoaded').then(({ response }) => {
-        expect(response.statusCode).to.equal(200);
+//     cy.wait('@pageLoaded').then(({ response }) => {
+//         expect(response.statusCode).to.equal(200);
 
         
-        togetRandomItem();
-        toGetDataFromTheDatabase();
+//         togetRandomItem();
+//         toGetDataFromTheDatabase();
 
         
         
-        function togetRandomItem() {
+//         function togetRandomItem() {
             
-            var numberOfItems = response.body.items.length - 1;
+//             var numberOfItems = response.body.items.length - 1;
 
-            do {
-                var i = getRandomNumber(numberOfItems);
-                cy.wrap({
-                    id: response.body.items[i].id
-                }).as('itemId')
+//             do {
+//                 var i = getRandomNumber(numberOfItems);
+//                 cy.wrap({
+//                     id: response.body.items[i].id
+//                 }).as('itemId')
 
-                cy.log("Found perfect item")
+//                 cy.log("Found perfect item")
 
-            } while (response.body.items[i].caseSize > 1);
-        }
+//             } while (response.body.items[i].caseSize > 1);
+//         }
 
-        function toGetDataFromTheDatabase() {
-            cy.get('@itemId').then((item: any) => {
-                cy.sqlServer(`SELECT Id, IPUCode, Description, PackSize, Type, NetPrice, Discount, TradePrice from Stockproducts WHERE Id = ${item.id}`)
-                    .then((data: any) => {
-                        cy.wrap({
-                            id: data[0],
-                            ipuCode: data[1],
-                            description: data[2],
-                            packSize: data[3],
-                            packType: data[4],
-                            netprice: data[5],
-                            discount: data[6],
-                            tradeprice: data[7]
-                        }).as('item')
-                    })
-            })
-        }
-    })
-}
+//         function toGetDataFromTheDatabase() {
+//             cy.get('@itemId').then((item: any) => {
+//                 cy.sqlServer(`SELECT Id, IPUCode, Description, PackSize, Type, NetPrice, Discount, TradePrice from Stockproducts WHERE Id = ${item.id}`)
+//                     .then((data: any) => {
+//                         cy.wrap({
+//                             id: data[0],
+//                             ipuCode: data[1],
+//                             description: data[2],
+//                             packSize: data[3],
+//                             packType: data[4],
+//                             netprice: data[5],
+//                             discount: data[6],
+//                             tradeprice: data[7]
+//                         }).as('item')
+//                     })
+//             })
+//         }
+//     })
+// }
 
 
 function toCheckDataGrid() {
@@ -101,6 +114,15 @@ describe('', () => {
         });
     });
 
+    
+
+
+    it('Search by Product Descritption | ULM', () => {
+        //Take the item from the page ULM
+        //type the description 
+        // 
+    });
+
     it('Search by Product Descritption | Brokered Ethical', () => {
         
         cy.visitPage("Brokered Ethical");
@@ -133,7 +155,7 @@ describe('', () => {
         cy.visitPage("Brokered OTC");
 
         
-        getItemForTest();
+        
         
         cy.visit('https://pharmax2-test-windows.blueberrytest.com/app');
 
